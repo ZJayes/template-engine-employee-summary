@@ -6,6 +6,7 @@ const path = require("path");
 const fs = require("fs");
 const OUTPUT_DIR = path.resolve(__dirname, "output");
 const outputPath = path.join(OUTPUT_DIR, "team.html");
+
 const render = require("./lib/htmlRenderer");
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
@@ -35,18 +36,21 @@ const internQuestion = [
     },
 ]
 function teamMembers(){
+
+    //move quit to its own inquirer prompt
+    //allquestions.push
     inquirer    
         .prompt([
             {
                 type: 'list',
                 name: 'position',
-                message: 'Please select your position with the company',
+                message: 'Please enter your position.',
                 choices: ['Engineer', 'Intern', 'Manager', 'Quit']
             },
             {
                 type: 'input',
                 name: 'name',
-                message: 'What is your name?.',
+                message: 'Please enter your name.',
             },
             {
                 type: 'input',
@@ -59,6 +63,17 @@ function teamMembers(){
                 message: 'Please enter your email address.',
             },
         ]).then((response) => {
+            // if (response.position === "Quit") {
+            //     render
+            // }
+            const html = response.position === "Quit" && render(allEmployees)
+            fs.writeFile('main.html', html, (err)=> {
+                if (err) {
+                    throw err
+                } else {
+                    console.log('you made an HTML!')
+                }
+            })
             switch (response.position){
                 case 'Engineer': 
                     currentEmployeeQuestion = engineerQuestion;
@@ -70,23 +85,30 @@ function teamMembers(){
                     currentEmployeeQuestion = managerQuestion;
                     break;
                 case 'Quit':
+                    return;
+                    
             }
-            currentEmployee = response.position;
+            currentEmployee = response;
             inquirer    
         .prompt(currentEmployeeQuestion).then((response) => {
-            switch (currentEmployee){
+            switch (currentEmployee.position){
                 case 'Engineer': 
-                    newEmployee =  new Engineer(response.name, response.id, response.email, response.gitHub);                
+                    newEmployee =  new Engineer(currentEmployee.name, currentEmployee.id, currentEmployee.email, response.gitHub);                
                     break;
                 case 'Intern':
-                    newEmployee = new Intern(response.name, response.id, response.email, response.school)              
+                    newEmployee = new Intern(currentEmployee.name, currentEmployee.id, currentEmployee.email, response.school)              
                     break;
                 case 'Manager':
-                    newEmployee = new Manager(response.name, response.id, response.email, response.officeNumber)                    
+                    newEmployee = new Manager(currentEmployee.name, currentEmployee.id, currentEmployee.email, response.officeNumber)                    
                     break;
             }
+
+            console.log(newEmployee)
             allEmployees.push(newEmployee);
             console.log(allEmployees);
+
+
+
         }).then( () => teamMembers());
         })
 }
