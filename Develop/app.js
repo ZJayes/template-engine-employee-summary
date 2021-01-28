@@ -6,7 +6,6 @@ const path = require("path");
 const fs = require("fs");
 const OUTPUT_DIR = path.resolve(__dirname, "output");
 const outputPath = path.join(OUTPUT_DIR, "team.html");
-
 const render = require("./lib/htmlRenderer");
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
@@ -36,84 +35,84 @@ const internQuestion = [
     },
 ]
 function teamMembers(){
-
-    //move quit to its own inquirer prompt
-    //allquestions.push
     inquirer    
         .prompt([
             {
                 type: 'list',
                 name: 'position',
-                message: 'Please enter your position.',
+                message: 'Please select your position with the company',
                 choices: ['Engineer', 'Intern', 'Manager', 'Quit']
             },
-            {
-                type: 'input',
-                name: 'name',
-                message: 'Please enter your name.',
-            },
-            {
-                type: 'input',
-                name: 'id',
-                message: 'Please enter your ID number.',
-            },
-            {
-                type: 'input',
-                name: 'email',
-                message: 'Please enter your email address.',
-            },
         ]).then((response) => {
-            // if (response.position === "Quit") {
-            //     render
-            // }
-            const html = response.position === "Quit" && render(allEmployees)
-            fs.writeFile('main.html', html, (err)=> {
-                if (err) {
-                    throw err
-                } else {
-                    console.log('you made an HTML!')
-                }
-            })
-            switch (response.position){
-                case 'Engineer': 
-                    currentEmployeeQuestion = engineerQuestion;
-                    break;
-                case 'Intern':
-                    currentEmployeeQuestion = internQuestion;
-                    break;
-                case 'Manager':
-                    currentEmployeeQuestion = managerQuestion;
-                    break;
-                case 'Quit':
+            if (response.position === 'Quit') {
+                try {
+                    fs.writeFileSync(outputPath, render(allEmployees))
+                    console.log('You created a team!');
                     return;
-                    
+                } catch(err) {
+                    console.error(err);
+                }
             }
-            currentEmployee = response;
-            inquirer    
-        .prompt(currentEmployeeQuestion).then((response) => {
-            switch (currentEmployee.position){
-                case 'Engineer': 
-                    newEmployee =  new Engineer(currentEmployee.name, currentEmployee.id, currentEmployee.email, response.gitHub);                
-                    break;
-                case 'Intern':
-                    newEmployee = new Intern(currentEmployee.name, currentEmployee.id, currentEmployee.email, response.school)              
-                    break;
-                case 'Manager':
-                    newEmployee = new Manager(currentEmployee.name, currentEmployee.id, currentEmployee.email, response.officeNumber)                    
-                    break;
+            else {
+                inquirer.prompt([
+                    {
+                        type: 'input',
+                        name: 'name',
+                        message: 'What is your name?.',
+                    },
+                    {
+                        type: 'input',
+                        name: 'id',
+                        message: 'Please enter your ID number.',
+                    },
+                    {
+                        type: 'input',
+                        name: 'email',
+                        message: 'Please enter your email address.',
+                    },
+                ]).then(response2 => {
+                    currentEmployee = {
+                        ...response,
+                        ...response2
+                    }
+                    switch (response.position){
+                        case 'Engineer': 
+                            currentEmployeeQuestion = engineerQuestion;
+                            continuePrompt();
+                            break;
+                        case 'Intern':
+                            currentEmployeeQuestion = internQuestion;
+                            continuePrompt();
+                            break;
+                        case 'Manager':
+                            currentEmployeeQuestion = managerQuestion;
+                            continuePrompt();
+                            break;
+                    }
+                })
             }
-
-            console.log(newEmployee)
-            allEmployees.push(newEmployee);
-            console.log(allEmployees);
-
-
-
-        }).then( () => teamMembers());
         })
 }
+function continuePrompt() {
+    inquirer    
+    .prompt(currentEmployeeQuestion).then((response) => {
+        switch (currentEmployee.position){
+            case 'Engineer': 
+                newEmployee =  new Engineer(currentEmployee.name, currentEmployee.id, currentEmployee.email, response.gitHub);                
+                break;
+            case 'Intern':
+                newEmployee = new Intern(currentEmployee.name, currentEmployee.id, currentEmployee.email, response.school)              
+                break;
+            case 'Manager':
+                newEmployee = new Manager(currentEmployee.name, currentEmployee.id, currentEmployee.email, response.officeNumber)                    
+                break;
+        }
+        console.log(newEmployee)
+        allEmployees.push(newEmployee);
+        console.log(allEmployees);
+    }).then( () => teamMembers());
+}
 teamMembers();
-
 
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
